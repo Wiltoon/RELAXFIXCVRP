@@ -18,7 +18,7 @@ def createModel(inputs):
     x,u = createVariables(model, inputs, A, N, Q)
     createObjectiveFunction(model, inputs, x, A)
     q = {i: inputs.cargapedidos[i] for i in N}
-    print(q)
+    # print(q)
     createConstraints(model, x, u, q, A, N, V, Q)
     return model, A, N, V, x, u, q, Q
 
@@ -72,8 +72,11 @@ def printResults(solution, model, entrada, A, x):
     plt.figure(figsize=(15,15))
     plt.scatter(entrada.deposit.x, entrada.deposit.y, marker='s', color='r')
     plt.scatter(entrada.coordenadas_x_pedidos, entrada.coordenadas_y_pedidos)
+    for i in range(entrada.n):
+        plt.annotate('%d'%(entrada.pedidos[i].num),(entrada.coordenadas_x_pedidos[i]+1, entrada.coordenadas_y_pedidos[i]+1))
     for i, j in active_arcs:
         plt.plot([entrada.coordenadas_x_pedidos[i], entrada.coordenadas_x_pedidos[j]], [entrada.coordenadas_y_pedidos[i], entrada.coordenadas_y_pedidos[j]], c='g', alpha=0.3)
+    plt.savefig('map.png', format='png')
     plt.show()
     # model.pprint()
     # for k in model.M:
@@ -93,9 +96,8 @@ def printResults(solution, model, entrada, A, x):
     #                 rotaX.append(entrada.pedidos[j].x)
     #                 rotaY.append(entrada.pedidos[j].y)
     #     plt.plot(rotaX,rotaY)
-def alterVariablesFor(mdl, variables, type_wish):
+def alterVariablesTo(mdl, variables, type_wish):
     relaxed_model = mdl.copy()
-    model_name = mdl.name
     mdl_class = mdl.__class__
     relax_model_name = 'rlx_'+mdl.name
     relaxed_model = mdl_class(name=relax_model_name)
