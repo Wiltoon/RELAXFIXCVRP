@@ -2,7 +2,7 @@ from RELAXFIXCVRP.modelCVRP import alterVariablesTo
 
 from docplex.mp.model import Model
 
-def solve_relax_fix_each_client(mdl_relax: Model, N):
+def solve_relax_fix_each_client(mdl_relax: Model, N: int, x):
     visitados = []
     visitar = [0]
     t = 0
@@ -19,8 +19,8 @@ def solve_relax_fix_each_client(mdl_relax: Model, N):
         # Fixar variaveis
         for check in range(len(visitar)):            
             for j in range(N):
-                if x[visitar[check]][j]:
-                    x[visitar[check]][j].fix(1,1)
+                if x[(visitar[check],j)].solution_value >= 0.9:
+                    fix(x[(visitar[check],j)])
                     visitado = 0
                     for it in range(len(visitados)):
                         if visitados[it] == j:
@@ -28,9 +28,17 @@ def solve_relax_fix_each_client(mdl_relax: Model, N):
                     if visitado == 0:
                         destinatarios.append(j)
                 else:
-                    x[visitar[check]][j].fix(0,0)
+                    fix(x[(visitar[check],j)])
         visitar = destinatarios.copy()
 
 def transformVariablesToBinary(mdl: Model, variables):
     mdl_rlx = alterVariablesTo(mdl, variables, mdl.binary_vartype)
     return mdl_rlx
+
+def fix(x):
+    fixToValue(x,x.solution_value)
+
+def fixToValue(x,value):
+    fixer = value
+    x.lb(fixer)
+    x.ub(fixer)
