@@ -1,8 +1,10 @@
+from typing import DefaultDict
 import pandas as pd
 import io
 import matplotlib.pyplot as plt
 from docplex.mp.model import Model
 from docplex.mp.relax_linear import LinearRelaxer
+from docplex.mp.utils import DocplexLinearRelaxationError
 
 import numpy as np
 
@@ -18,26 +20,18 @@ def createModel(inputs):
     x,u = createVariables(model, inputs, A, N, Q)
     createObjectiveFunction(model, inputs, x, A)
     q = {i: inputs.cargapedidos[i] for i in N}
-    print(q)
     createConstraints(model, x, u, q, A, N, V, Q)
     return model, A, N, V, x, u, q, Q
 
 def solve(mdl, tempo):
     mdl.parameters.timelimit = tempo
     return mdl.solve(log_output=True)
-    # opt = SolverFactory(solver)
-    # return opt.solve(model)
     
 def createIndex(model, inputs):
     N = [i for i in range(1, inputs.n)]
     V = [0] + N
     A = [(i,j) for i in V for j in V if i != j]
     return A, N, V
-    # model.I = pyo.RangeSet(inputs.n)
-    # model.J = pyo.RangeSet(inputs.n)
-    # model.H = pyo.RangeSet(inputs.n)
-    # model.Vlin = pyo.RangeSet((inputs.n - 1))
-    # model.M = pyo.RangeSet(inputs.num_veiculos)
 
 def createParams(model, inputs):
     model.c = pyo.Param(model.M, model.I, model.J, initialize = lambda model, k, i, j: inputs.custo_k[k-1][i-1][j-1])
@@ -49,9 +43,6 @@ def createVariables(mdl, inputs, A, N, Q):
     x = mdl.binary_var_dict(A, name='x')
     u = mdl.continuous_var_dict(N, ub=Q, name='u')
     return x,u
-    # model.z = pyo.Var(model.M, within = pyo.Binary)
-    # model.x = pyo.Var(model.M, model.I, model.J, within= pyo.Binary)
-    # model.y = pyo.Var(model.I, model.J, within=pyo.NonNegativeIntegers, bounds=(0,inputs.capacidade_dos_veiculos))
 
 def createObjectiveFunction(model, entrada, x, A):
     c = {(i, j): np.hypot(entrada.pedidos[i].x-entrada.pedidos[j].x, entrada.pedidos[i].y-entrada.pedidos[j].y) for i, j in A}
@@ -93,7 +84,11 @@ def printResults(solution, model, entrada, A, x):
     #                 rotaX.append(entrada.pedidos[j].x)
     #                 rotaY.append(entrada.pedidos[j].y)
     #     plt.plot(rotaX,rotaY)
-def alterVariablesFor(mdl, variables, type_wish):
+def alterVariablesTo(mdl, variables, type_wish):
+    
+    unrelaxables = DefaultDict(list)
+    def process_unrelaxable(urx_, reason):
+        unrelaxables[reason or 'unknown'].append(urx_)
     relaxed_model = mdl.copy()
     mdl_class = mdl.__class__
     relax_model_name = 'rlx_'+mdl.name
@@ -186,3 +181,4 @@ def createExecutePrinter(namefile,num_veiculos,capacidade,n,tempo_execution):
         x = x
     )
     return model, result, dados, A, x
+
