@@ -46,6 +46,9 @@ def solve_relax_fix_each_client(mdl_relax: Model, N: int, x):
                 variable = 'x_'+str(visitar[d])+'_'+str(j)
                 variables.append(variable)
         model = transformVariablesToBinary(mdl_relax, variables)
+        # for ct in model.iter_variables():
+        #     print("Aque -> " + ct)
+        # print("NADA?")
         result = solve(model,10)
         # Fixar variaveis
         for check in range(len(visitar)):            
